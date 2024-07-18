@@ -1,0 +1,98 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+
+public class Solution {
+	private static final Set<String> VALID_ONE_LETTER_WORDS = Set.of( "I", "A");
+	private static final HashMap<Integer, Set<String>> LENGTH_WORDS_MAP = new HashMap<>();
+
+	public static void main(String[] args) {
+		long start = System.currentTimeMillis();
+		try {
+			List<String> allWords = loadAllWords();
+
+			LENGTH_WORDS_MAP.put(1, VALID_ONE_LETTER_WORDS);
+			for (int i = 2; i <= 9; i++) {
+				LENGTH_WORDS_MAP.put( i, new LinkedHashSet<>() );
+			}
+
+			allWords.forEach( word -> {
+				int length = word.length();
+				if (LENGTH_WORDS_MAP.containsKey( length )) {
+					LENGTH_WORDS_MAP.get( length ).add( word );
+				}
+			} );
+
+//            List<String> nineLetterWords = List.of("STARTLING", "STRINGIER", "STRAPPING", "SCRAPPING", "CLEANSERS", "SPLATTERS", "DROWNINGS", "WRAPPINGS","STARVINGS", "TRAPPINGS", "MAKINGTIN");
+
+			List<String> existingWords = new ArrayList<>();
+
+			int position = 0;
+			for (String word : LENGTH_WORDS_MAP.get( 9 )) {
+				boolean isValidWord = decrementAndCheck(word, position);
+				if (isValidWord) {
+					existingWords.add(word);
+				}
+			}
+
+			long finish = System.currentTimeMillis();
+			long timeElapsed = finish - start;
+			System.out.println("Time Elapsed: " + timeElapsed);
+			System.out.println(existingWords);
+			System.out.println(existingWords.size());
+		} catch (MalformedURLException e) {
+			System.err.println("Malformed");
+		}
+
+	}
+
+	private static boolean decrementAndCheck(String givenWord, int letterPosition) {
+
+		for (int i = letterPosition; i < givenWord.length(); i++) {
+			String word = removeLetterFromWord(givenWord, i);
+			boolean existInList = doesWordExistInList(word, LENGTH_WORDS_MAP.get(word.length()));
+			if (existInList) {
+				if (word.length() == 1) {
+					return true;
+				}
+				if (decrementAndCheck(word, 0)) {
+					return true;
+				}
+			} else {
+				if (decrementAndCheck(givenWord, i + 1)) {
+					return true;
+				} else {
+					break;
+				}
+			}
+		}
+		return false;
+	}
+
+	private static boolean doesWordExistInList(String word, Set<String> words) {
+		return words.contains(word);
+	}
+
+	private static String removeLetterFromWord(String word, int position) {
+		var stringBuilder = new StringBuilder(word);
+		stringBuilder.deleteCharAt(position);
+
+		return stringBuilder.toString();
+	}
+
+	private static List<String> loadAllWords() throws MalformedURLException {
+		var wordsUrl = new URL( "https://raw.githubusercontent.com/nikiiv/JavaCodingTestOne/master/scrabble-words.txt");
+		List<String> words;
+
+		try (BufferedReader br = new BufferedReader( new InputStreamReader( wordsUrl.openConnection().getInputStream()))) {
+			words = new ArrayList<>(br.lines().skip(2).toList());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
+		return words;
+	}
+}
